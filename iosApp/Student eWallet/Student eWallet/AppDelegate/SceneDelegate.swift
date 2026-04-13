@@ -15,8 +15,24 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         let window = UIWindow(windowScene: windowScene)
-        
-        window.rootViewController = MainTabBarController()
+
+        // Always require login on cold launch: TokenStore is empty by design
+        let rootVC: UIViewController
+        if let _ = TokenStore.shared.token {
+            rootVC = MainTabBarController()
+        } else {
+            let login = LoginViewController()
+            let nav = UINavigationController(rootViewController: login)
+            // On successful login, switch to main tab bar
+            login.onLoginSuccess = { [weak window] in
+                let main = MainTabBarController()
+                window?.rootViewController = main
+                window?.makeKeyAndVisible()
+            }
+            rootVC = nav
+        }
+
+        window.rootViewController = rootVC
         self.window = window
         window.makeKeyAndVisible()
     }
